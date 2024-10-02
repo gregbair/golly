@@ -13,7 +13,9 @@ func Retry(f func() error, opts ...RetryOption) error {
 }
 
 func RetryResult[TResult any](f func() (TResult, error), opts ...RetryOption) (TResult, error) {
+	var emptyResult TResult
 	var attempt uint = 0
+	var errs error
 
 	c := defaultConfig()
 
@@ -22,7 +24,12 @@ func RetryResult[TResult any](f func() (TResult, error), opts ...RetryOption) (T
 	}
 
 	for {
-		var errs error
+		select {
+		case <-c.ctxt.Done():
+			// handle the context being canceled
+			return emptyResult, errors.Join(errs, c.ctxt.Err())
+		default:
+		}
 		result, err := f()
 
 		if err == nil {
@@ -41,6 +48,7 @@ func RetryResult[TResult any](f func() (TResult, error), opts ...RetryOption) (T
 		if increment {
 			attempt++
 		}
+
 	}
 }
 
