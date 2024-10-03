@@ -131,6 +131,21 @@ func TestDelay(t *testing.T) {
 
 		assert.Equal(t, 2*time.Millisecond, p.delay)
 	})
+
+	t.Run("delay generator respected", func(t *testing.T) {
+		p := &fakeProvider{}
+		expectedDelay := 12 * time.Millisecond
+
+		_ = Retry(
+			func() error { return errors.New("foo") },
+			Attempts(2),
+			Delay(72*time.Millisecond),
+			TimeProviderImpl(p),
+			DelayGenerator(func(u uint, ctx context.Context) time.Duration { return expectedDelay }),
+		)
+
+		assert.Equal(t, expectedDelay, p.delay)
+	})
 }
 
 type fakeProvider struct {

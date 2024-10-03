@@ -10,6 +10,8 @@ type OnRetryFunc func(uint, error)
 
 type RandomizerFunc func() float64
 
+type DelayFunc func(uint, context.Context) time.Duration
+
 type DelayBackOffStrategy int
 
 const (
@@ -26,6 +28,7 @@ type retryConfig struct {
 	randomizer      RandomizerFunc
 	delay           time.Duration
 	maxDelay        time.Duration
+	delayGenerator  DelayFunc
 	timeProvider    TimeProvider
 }
 
@@ -96,5 +99,11 @@ func TimeProviderImpl(t TimeProvider) RetryOption {
 func Randomizer(f RandomizerFunc) RetryOption {
 	return func(c *retryConfig) {
 		c.randomizer = f
+	}
+}
+
+func DelayGenerator(f DelayFunc) RetryOption {
+	return func(c *retryConfig) {
+		c.delayGenerator = f
 	}
 }

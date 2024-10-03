@@ -3,7 +3,6 @@ package retry
 
 import (
 	"errors"
-	"fmt"
 	"math"
 	"time"
 )
@@ -48,10 +47,14 @@ func RetryResult[TResult any](f func() (TResult, error), opts ...RetryOption) (T
 			return result, errs
 		}
 
-		delay, err := getDelay(c, attempt)
-		if err != nil {
-			return emptyResult, errors.Join(errs, err)
+		delay := getDelay(c, attempt)
+		if c.delayGenerator != nil {
+			newDelay := c.delayGenerator(attempt, c.ctxt)
+			if newDelay >= 0 {
+				delay = newDelay
+			}
 		}
+
 		if delay > 0 {
 			<-c.timeProvider.After(delay)
 		}
@@ -70,7 +73,7 @@ func isLastAttempt(attempt uint, c *retryConfig) (isLastAttempt bool, increment 
 	return attempt >= c.attempts, true
 }
 
-func getDelay(c *retryConfig, attempt uint) (time.Duration, error) {
+func getDelay(c *retryConfig, attempt uint) time.Duration {
 	var delay time.Duration
 
 	switch c.backOffStrategy {
@@ -79,7 +82,7 @@ func getDelay(c *retryConfig, attempt uint) (time.Duration, error) {
 	case Constant:
 		delay = c.delay
 	default:
-		return 0, fmt.Errorf("unsuppported backoff type %v", c.backOffStrategy)
+		return c.delay
 	}
 
 	if c.jitter {
@@ -90,7 +93,7 @@ func getDelay(c *retryConfig, attempt uint) (time.Duration, error) {
 		delay = c.maxDelay
 	}
 
-	return delay, nil
+	return delay
 }
 
 func applyJitter(d time.Duration, c *retryConfig) time.Duration {
