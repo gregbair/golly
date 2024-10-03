@@ -4,6 +4,7 @@ package retry
 import (
 	"errors"
 	"math"
+	"time"
 )
 
 func Retry(f func() error, opts ...RetryOption) error {
@@ -45,6 +46,11 @@ func RetryResult[TResult any](f func() (TResult, error), opts ...RetryOption) (T
 			return result, errs
 		}
 
+		delay := getDelay(c)
+		if delay > 0 {
+			<-c.timeProvider.After(delay)
+		}
+
 		if increment {
 			attempt++
 		}
@@ -57,4 +63,14 @@ func isLastAttempt(attempt uint, c *retryConfig) (isLastAttempt bool, increment 
 		return false, false
 	}
 	return attempt >= c.attempts, true
+}
+
+func getDelay(c *retryConfig) time.Duration {
+	delay := c.delay
+
+	if delay > c.maxDelay {
+		delay = c.maxDelay
+	}
+
+	return delay
 }

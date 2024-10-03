@@ -43,7 +43,7 @@ func TestContextCancellation(t *testing.T) {
 	})
 
 	t.Run("cancel during execution", func(t *testing.T) {
-		ctxt, _ := context.WithTimeout(context.Background(), 1000*time.Millisecond)
+		ctxt, cancel := context.WithTimeout(context.Background(), 1000*time.Millisecond)
 
 		var expectedAttempts uint = 10
 		var actualAttempts uint = 0
@@ -59,6 +59,46 @@ func TestContextCancellation(t *testing.T) {
 		assert.Error(t, err)
 		assert.ErrorContains(t, err, "context deadline exceeded")
 		assert.Less(t, actualAttempts, expectedAttempts)
-
+		cancel()
 	})
+}
+
+func TestDelay(t *testing.T) {
+	t.Run("test base delay", func(t *testing.T) {
+		p := fakeProvider{}
+		expectedDelay := 100 * time.Millisecond
+
+		err := Retry(
+			func() error { return errors.New("foo") },
+			Attempts(2),
+			Delay(expectedDelay),
+			TimeProviderImpl(&p),
+		)
+		assert.Error(t, err)
+		assert.Equal(t, expectedDelay, p.delay)
+	})
+
+	t.Run("test max delay", func(t *testing.T) {
+		p := &fakeProvider{}
+		expectedDelay := 100 * time.Millisecond
+
+		err := Retry(
+			func() error { return errors.New("foo") },
+			Attempts(2),
+			Delay(1*time.Second),
+			MaxDelay(expectedDelay),
+			TimeProviderImpl(p),
+		)
+		assert.Error(t, err)
+		assert.Equal(t, expectedDelay, p.delay)
+	})
+}
+
+type fakeProvider struct {
+	delay time.Duration
+}
+
+func (f *fakeProvider) After(d time.Duration) <-chan time.Time {
+	f.delay = d
+	return time.After(0)
 }
