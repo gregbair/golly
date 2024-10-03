@@ -3,6 +3,7 @@ package retry
 
 import (
 	"errors"
+	"fmt"
 	"math"
 	"time"
 )
@@ -39,14 +40,17 @@ func RetryResult[TResult any](f func() (TResult, error), opts ...RetryOption) (T
 
 		c.onRetry(attempt, err)
 
-		errs = errors.Join(err)
+		errs = errors.Join(errs, err)
 
 		isLastAttempt, increment := isLastAttempt(attempt, c)
 		if isLastAttempt {
 			return result, errs
 		}
 
-		delay := getDelay(c)
+		delay, err := getDelay(c, attempt)
+		if err != nil {
+			return emptyResult, errors.Join(errs, err)
+		}
 		if delay > 0 {
 			<-c.timeProvider.After(delay)
 		}
@@ -65,12 +69,21 @@ func isLastAttempt(attempt uint, c *retryConfig) (isLastAttempt bool, increment 
 	return attempt >= c.attempts, true
 }
 
-func getDelay(c *retryConfig) time.Duration {
+func getDelay(c *retryConfig, attempt uint) (time.Duration, error) {
 	delay := c.delay
+
+	switch c.backoffType {
+	case Linear:
+		delay = time.Duration(int64(attempt+1)*c.delay.Milliseconds()) * time.Millisecond
+	case Constant:
+		delay = c.delay
+	default:
+		return 0, fmt.Errorf("unsuppported backoff type %v", c.backoffType)
+	}
 
 	if delay > c.maxDelay {
 		delay = c.maxDelay
 	}
 
-	return delay
+	return delay, nil
 }

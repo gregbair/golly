@@ -92,6 +92,45 @@ func TestDelay(t *testing.T) {
 		assert.Error(t, err)
 		assert.Equal(t, expectedDelay, p.delay)
 	})
+
+	t.Run("no delay, provider not called", func(t *testing.T) {
+		p := &failingProvider{t: t}
+
+		_ = Retry(
+			func() error { return errors.New("foo") },
+			Attempts(2),
+			Delay(0),
+			TimeProviderImpl(p),
+		)
+	})
+
+	t.Run("constant delay, does not change", func(t *testing.T) {
+		p := &fakeProvider{}
+
+		_ = Retry(
+			func() error { return errors.New("foo") },
+			Attempts(20),
+			Delay(17*time.Millisecond),
+			BackOffType(Constant),
+			TimeProviderImpl(p),
+		)
+
+		assert.Equal(t, 17*time.Millisecond, p.delay)
+	})
+
+	t.Run("Linear delay, grows linearly", func(t *testing.T) {
+		p := &fakeProvider{}
+
+		_ = Retry(
+			func() error { return errors.New("foo") },
+			Attempts(2),
+			Delay(1*time.Millisecond),
+			BackOffType(Linear),
+			TimeProviderImpl(p),
+		)
+
+		assert.Equal(t, 2*time.Millisecond, p.delay)
+	})
 }
 
 type fakeProvider struct {
@@ -101,4 +140,13 @@ type fakeProvider struct {
 func (f *fakeProvider) After(d time.Duration) <-chan time.Time {
 	f.delay = d
 	return time.After(0)
+}
+
+type failingProvider struct {
+	t *testing.T
+}
+
+func (f *failingProvider) After(d time.Duration) <-chan time.Time {
+	assert.FailNow(f.t, "AFter should not have been called")
+	return nil
 }
