@@ -2,10 +2,13 @@ package retry
 
 import (
 	"context"
+	"math/rand"
 	"time"
 )
 
 type OnRetryFunc func(uint, error)
+
+type RandomizerFunc func() float64
 
 type DelayBackOffStrategy int
 
@@ -20,6 +23,7 @@ type retryConfig struct {
 	ctxt            context.Context
 	backOffStrategy DelayBackOffStrategy
 	jitter          bool
+	randomizer      RandomizerFunc
 	delay           time.Duration
 	maxDelay        time.Duration
 	timeProvider    TimeProvider
@@ -34,6 +38,7 @@ func defaultConfig() *retryConfig {
 		ctxt:            context.Background(),
 		backOffStrategy: Constant,
 		jitter:          false,
+		randomizer:      rand.Float64,
 		delay:           0,
 		maxDelay:        5 * time.Second,
 		timeProvider:    systemTimeProvider{},
@@ -85,5 +90,11 @@ func Delay(t time.Duration) RetryOption {
 func TimeProviderImpl(t TimeProvider) RetryOption {
 	return func(c *retryConfig) {
 		c.timeProvider = t
+	}
+}
+
+func Randomizer(f RandomizerFunc) RetryOption {
+	return func(c *retryConfig) {
+		c.randomizer = f
 	}
 }

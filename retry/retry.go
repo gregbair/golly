@@ -8,9 +8,10 @@ import (
 	"time"
 )
 
+const jitterFactor float64 = 0.5
+
 func Retry(f func() error, opts ...RetryOption) error {
-	m := func() (any, error) { return nil, f() }
-	_, err := RetryResult(m, opts...)
+	_, err := RetryResult(func() (any, error) { return nil, f() }, opts...)
 	return err
 }
 
@@ -81,9 +82,21 @@ func getDelay(c *retryConfig, attempt uint) (time.Duration, error) {
 		return 0, fmt.Errorf("unsuppported backoff type %v", c.backOffStrategy)
 	}
 
+	if c.jitter {
+		delay = applyJitter(delay, c)
+	}
+
 	if delay > c.maxDelay {
 		delay = c.maxDelay
 	}
 
 	return delay, nil
+}
+
+func applyJitter(d time.Duration, c *retryConfig) time.Duration {
+	offset := (float64(d.Milliseconds()) * jitterFactor) / 2
+	randomDelay := (float64(d.Milliseconds()) * jitterFactor * c.randomizer()) - offset
+	newDelay := float64(d.Milliseconds()) + randomDelay
+
+	return time.Duration(newDelay * float64(time.Millisecond))
 }
