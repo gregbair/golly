@@ -35,13 +35,13 @@ type retryConfig struct {
 	timeProvider    TimeProvider
 }
 
-// RetryOption is a functional configuration function
-type RetryOption func(*retryConfig)
+// Option is a functional configuration function
+type Option func(*retryConfig)
 
 func defaultConfig() *retryConfig {
 	return &retryConfig{
 		attempts:        3,
-		onRetry:         func(u uint, err error) {},
+		onRetry:         func(uint, error) {},
 		ctxt:            context.Background(),
 		backoffStrategy: Constant,
 		jitter:          false,
@@ -53,70 +53,70 @@ func defaultConfig() *retryConfig {
 }
 
 // Attempts sets the number of attempts to allow before failure with a default of 3
-func Attempts(attempts uint) RetryOption {
+func Attempts(attempts uint) Option {
 	return func(c *retryConfig) {
 		c.attempts = attempts
 	}
 }
 
 // OnRetry is a callback that is called after each attempt
-func OnRetry(f onRetryFunc) RetryOption {
+func OnRetry(f onRetryFunc) Option {
 	return func(c *retryConfig) {
 		c.onRetry = f
 	}
 }
 
 // Context gives a context that is checked for cancellation on every attempt
-func Context(ctxt context.Context) RetryOption {
+func Context(ctxt context.Context) Option {
 	return func(c *retryConfig) {
 		c.ctxt = ctxt
 	}
 }
 
 // BackoffStrategy provides a choice of backoff algorithms
-func BackoffStrategy(d DelayBackoffStrategy) RetryOption {
+func BackoffStrategy(d DelayBackoffStrategy) Option {
 	return func(c *retryConfig) {
 		c.backoffStrategy = d
 	}
 }
 
 // Jitter decides whether a bit of randomization is added to the delay with a default of false
-func Jitter(j bool) RetryOption {
+func Jitter(j bool) Option {
 	return func(c *retryConfig) {
 		c.jitter = j
 	}
 }
 
 // MaxDelay sets a maximum delay that is enforced after linear backoff and any jitter is applied
-func MaxDelay(t time.Duration) RetryOption {
+func MaxDelay(t time.Duration) Option {
 	return func(c *retryConfig) {
 		c.maxDelay = t
 	}
 }
 
 // Delay sets a baseline delay duration between each attempt
-func Delay(t time.Duration) RetryOption {
+func Delay(t time.Duration) Option {
 	return func(c *retryConfig) {
 		c.delay = t
 	}
 }
 
 // TimeProviderImpl provides a TimeProvider that is used for counting the delay with a default of the stdlib time functions
-func TimeProviderImpl(t TimeProvider) RetryOption {
+func TimeProviderImpl(t TimeProvider) Option {
 	return func(c *retryConfig) {
 		c.timeProvider = t
 	}
 }
 
 // Randomizer provides a randomizing function used when jitter is applied with a default of the rand.Float64 function
-func Randomizer(f randomizerFunc) RetryOption {
+func Randomizer(f randomizerFunc) Option {
 	return func(c *retryConfig) {
 		c.randomizer = f
 	}
 }
 
 // DelayGenerator provides a function that can be used to do custom calculations of the delay duration
-func DelayGenerator(f delayFunc) RetryOption {
+func DelayGenerator(f delayFunc) Option {
 	return func(c *retryConfig) {
 		c.delayGenerator = f
 	}

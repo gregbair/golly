@@ -29,11 +29,12 @@ Retry retries a given function f a specified number of times or until a timeout 
 	    Attempts(5)
 	)
 */
-func Retry(f func() error, opts ...RetryOption) error {
+func Retry(f func() error, opts ...Option) error {
 	_, err := RetryResult(func() (any, error) { return nil, f() }, opts...)
 	return err
 }
 
+//revive:disable-next-line It flags the name RetryResult as stuttering, but I can't think of a better name.
 /*
 RetryResult retries a given function f a specified number of times
 or until a timeout occurs, handling errors that may arise during execution.
@@ -62,9 +63,9 @@ or until a timeout occurs, handling errors that may arise during execution.
 	    // Handle error
 	}
 */
-func RetryResult[TResult any](f func() (TResult, error), opts ...RetryOption) (TResult, error) {
+func RetryResult[TResult any](f func() (TResult, error), opts ...Option) (TResult, error) {
 	var emptyResult TResult
-	var attempt uint = 0
+	var attempt uint
 	var errs error
 
 	c := defaultConfig()

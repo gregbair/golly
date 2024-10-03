@@ -11,8 +11,8 @@ import (
 
 func TestNoRetrySuccess(t *testing.T) {
 	expectedResult := 5
-	var attempts uint = 0
-	result, err := RetryResult(func() (int, error) { return expectedResult, nil }, Attempts(3), OnRetry(func(u uint, err error) { attempts = u }))
+	var attempts uint
+	result, err := RetryResult(func() (int, error) { return expectedResult, nil }, Attempts(3), OnRetry(func(u uint, _ error) { attempts = u }))
 	assert.Equal(t, uint(0), attempts)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedResult, result)
@@ -20,8 +20,8 @@ func TestNoRetrySuccess(t *testing.T) {
 
 func TestRetryOnErr(t *testing.T) {
 	var expectedAttempts uint = 5
-	var actualAttempts uint = 0
-	err := Retry(func() error { return errors.New("foo") }, Attempts(expectedAttempts), OnRetry(func(u uint, err error) { actualAttempts = u }))
+	var actualAttempts uint
+	err := Retry(func() error { return errors.New("foo") }, Attempts(expectedAttempts), OnRetry(func(u uint, _ error) { actualAttempts = u }))
 	assert.Error(t, err)
 	assert.Equal(t, expectedAttempts, actualAttempts)
 }
@@ -34,7 +34,7 @@ func TestContextCancellation(t *testing.T) {
 		err := Retry(
 			func() error { return errors.New("foo") },
 			Attempts(5),
-			OnRetry(func(u uint, e error) { executed = true }),
+			OnRetry(func(uint, error) { executed = true }),
 			Context(ctxt),
 		)
 		assert.Error(t, err)
@@ -46,12 +46,12 @@ func TestContextCancellation(t *testing.T) {
 		ctxt, cancel := context.WithTimeout(context.Background(), 1000*time.Millisecond)
 
 		var expectedAttempts uint = 10
-		var actualAttempts uint = 0
+		var actualAttempts uint
 		err := Retry(
 			func() error { return errors.New("foo") },
 			Attempts(expectedAttempts),
 			Context(ctxt),
-			OnRetry(func(u uint, err error) {
+			OnRetry(func(u uint, _ error) {
 				actualAttempts = u
 				time.Sleep(500 * time.Millisecond)
 			}),
@@ -141,7 +141,7 @@ func TestDelay(t *testing.T) {
 			Attempts(2),
 			Delay(72*time.Millisecond),
 			TimeProviderImpl(p),
-			DelayGenerator(func(u uint, ctx context.Context) time.Duration { return expectedDelay }),
+			DelayGenerator(func(uint, context.Context) time.Duration { return expectedDelay }),
 		)
 
 		assert.Equal(t, expectedDelay, p.delay)
@@ -161,7 +161,7 @@ type failingProvider struct {
 	t *testing.T
 }
 
-func (f *failingProvider) After(d time.Duration) <-chan time.Time {
+func (f *failingProvider) After(time.Duration) <-chan time.Time {
 	assert.FailNow(f.t, "AFter should not have been called")
 	return nil
 }
