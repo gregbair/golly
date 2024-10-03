@@ -1,26 +1,3 @@
-/*
-Package retry is a retry provider providing constant and linear backoff strategies, configurable delay, and more.
-
-# Key Features
-
-  - Context-aware: The function respects a provided context and can handle cancellation.
-  - Customizable: The RetryOption functions allow for flexible configuration of retry behavior.
-  - Error handling: The function accumulates errors and returns them if all retries fail.
-  - Delay strategies: Supports various delay strategies, including fixed delays and backoff algorithms.
-  - Callbacks: Provides callbacks for handling retries and customizing behavior.
-
-# Example usage
-
-The following is a basic example of using retry with no return value. In this
-example, the operation will be retried 5 times and then all errors will be returned.
-
-		func doSomething() error {return errors.New("foo")}
-
-	    err:= Retry(
-			doSomething,
-			Attempts(5)
-		)
-*/
 package retry
 
 import (
@@ -52,7 +29,7 @@ Retry retries a given function f a specified number of times or until a timeout 
 	    Attempts(5)
 	)
 */
-func Retry(operation func() error, opts ...RetryOption) error {
+func Retry(f func() error, opts ...RetryOption) error {
 	_, err := RetryResult(func() (any, error) { return nil, f() }, opts...)
 	return err
 }
@@ -147,7 +124,7 @@ func isLastAttempt(attempt uint, c *retryConfig) (isLastAttempt bool, increment 
 func getDelay(c *retryConfig, attempt uint) time.Duration {
 	var delay time.Duration
 
-	switch c.backOffStrategy {
+	switch c.backoffStrategy {
 	case Linear:
 		delay = time.Duration(int64(attempt+1)*c.delay.Milliseconds()) * time.Millisecond
 	case Constant:
