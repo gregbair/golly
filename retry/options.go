@@ -7,36 +7,36 @@ import (
 
 type OnRetryFunc func(uint, error)
 
-type DelayBackOffType int
+type DelayBackOffStrategy int
 
 const (
-	Constant DelayBackOffType = iota
+	Constant DelayBackOffStrategy = iota
 	Linear
 )
 
 type retryConfig struct {
-	attempts     uint
-	onRetry      OnRetryFunc
-	ctxt         context.Context
-	backoffType  DelayBackOffType
-	jitter       bool
-	delay        time.Duration
-	maxDelay     time.Duration
-	timeProvider TimeProvider
+	attempts        uint
+	onRetry         OnRetryFunc
+	ctxt            context.Context
+	backOffStrategy DelayBackOffStrategy
+	jitter          bool
+	delay           time.Duration
+	maxDelay        time.Duration
+	timeProvider    TimeProvider
 }
 
 type RetryOption func(*retryConfig)
 
 func defaultConfig() *retryConfig {
 	return &retryConfig{
-		attempts:     3,
-		onRetry:      func(u uint, err error) {},
-		ctxt:         context.Background(),
-		backoffType:  Constant,
-		jitter:       false,
-		delay:        0,
-		maxDelay:     5 * time.Second,
-		timeProvider: systemTimeProvider{},
+		attempts:        3,
+		onRetry:         func(u uint, err error) {},
+		ctxt:            context.Background(),
+		backOffStrategy: Constant,
+		jitter:          false,
+		delay:           0,
+		maxDelay:        5 * time.Second,
+		timeProvider:    systemTimeProvider{},
 	}
 }
 
@@ -58,9 +58,9 @@ func Context(ctxt context.Context) RetryOption {
 	}
 }
 
-func BackOffType(d DelayBackOffType) RetryOption {
+func BackOffStrategy(d DelayBackOffStrategy) RetryOption {
 	return func(c *retryConfig) {
-		c.backoffType = d
+		c.backOffStrategy = d
 	}
 }
 

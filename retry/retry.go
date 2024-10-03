@@ -70,15 +70,15 @@ func isLastAttempt(attempt uint, c *retryConfig) (isLastAttempt bool, increment 
 }
 
 func getDelay(c *retryConfig, attempt uint) (time.Duration, error) {
-	delay := c.delay
+	var delay time.Duration
 
-	switch c.backoffType {
+	switch c.backOffStrategy {
 	case Linear:
 		delay = time.Duration(int64(attempt+1)*c.delay.Milliseconds()) * time.Millisecond
 	case Constant:
 		delay = c.delay
 	default:
-		return 0, fmt.Errorf("unsuppported backoff type %v", c.backoffType)
+		return 0, fmt.Errorf("unsuppported backoff type %v", c.backOffStrategy)
 	}
 
 	if delay > c.maxDelay {

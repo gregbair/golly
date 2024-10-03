@@ -111,7 +111,7 @@ func TestDelay(t *testing.T) {
 			func() error { return errors.New("foo") },
 			Attempts(20),
 			Delay(17*time.Millisecond),
-			BackOffType(Constant),
+			BackOffStrategy(Constant),
 			TimeProviderImpl(p),
 		)
 
@@ -125,7 +125,7 @@ func TestDelay(t *testing.T) {
 			func() error { return errors.New("foo") },
 			Attempts(2),
 			Delay(1*time.Millisecond),
-			BackOffType(Linear),
+			BackOffStrategy(Linear),
 			TimeProviderImpl(p),
 		)
 
