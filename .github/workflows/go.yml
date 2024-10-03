@@ -31,3 +31,6 @@ jobs:
 
     - name: Test
       run: task test
+    
+    - name: Run Revive
+      uses: docker://morphy/revive-action:v2
