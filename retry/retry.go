@@ -1,4 +1,26 @@
-// Package retry is a simple retry loop
+/*
+Package retry is a retry provider providing constant and linear backoff strategies, configurable delay, and more.
+
+# Key Features
+
+  - Context-aware: The function respects a provided context and can handle cancellation.
+  - Customizable: The RetryOption functions allow for flexible configuration of retry behavior.
+  - Error handling: The function accumulates errors and returns them if all retries fail.
+  - Delay strategies: Supports various delay strategies, including fixed delays and backoff algorithms.
+  - Callbacks: Provides callbacks for handling retries and customizing behavior.
+
+# Example usage
+
+The following is a basic example of using retry with no return value. In this
+example, the operation will be retried 5 times and then all errors will be returned.
+
+		func doSomething() error {return errors.New("foo")}
+
+	    err:= Retry(
+			doSomething,
+			Attempts(5)
+		)
+*/
 package retry
 
 import (
@@ -9,11 +31,60 @@ import (
 
 const jitterFactor float64 = 0.5
 
-func Retry(f func() error, opts ...RetryOption) error {
+/*
+Retry retries a given function f a specified number of times or until a timeout occurs, handling errors that may arise during execution.
+
+# Parameters
+  - f: A function that returns an error.
+  - opts...: A variable number of RetryOption functions that can be used to customize the retry behavior, such as setting the maximum number of
+    attempts, specifying a delay strategy, and providing callbacks for handling retries.
+
+# Return Values
+
+  - error: An error if all retries fail or the context is canceled.
+
+# Example Usage
+
+	func doSomething() error {return errors.New("foo")}
+
+	err:= Retry(
+	    doSomething,
+	    Attempts(5)
+	)
+*/
+func Retry(operation func() error, opts ...RetryOption) error {
 	_, err := RetryResult(func() (any, error) { return nil, f() }, opts...)
 	return err
 }
 
+/*
+RetryResult retries a given function f a specified number of times
+or until a timeout occurs, handling errors that may arise during execution.
+
+# Parameters
+
+  - f: A function that returns a result of type TResult and an error.
+  - opts...: A variable number of RetryOption functions that can be used to
+    customize the retry behavior, such as setting the maximum number of
+    attempts, specifying a delay strategy, and providing callbacks for
+    handling retries.
+
+# Return Values
+
+  - TResult: The result of the function f if it succeeds.
+  - error: An error if all retries fail or the context is canceled.
+
+# Example Usage
+
+	func fetchData() (string, error) {
+	    // ...
+	}
+
+	result, err := RetryResult(fetchData, RetryMaxAttempts(3), RetryDelay(time.Second))
+	if err != nil {
+	    // Handle error
+	}
+*/
 func RetryResult[TResult any](f func() (TResult, error), opts ...RetryOption) (TResult, error) {
 	var emptyResult TResult
 	var attempt uint = 0
