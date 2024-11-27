@@ -152,6 +152,8 @@ type fakeProvider struct {
 	delay time.Duration
 }
 
+func (fakeProvider) UtcNow() time.Time { return time.Now().UTC() }
+
 func (f *fakeProvider) After(d time.Duration) <-chan time.Time {
 	f.delay = d
 	return time.After(0)
@@ -160,6 +162,8 @@ func (f *fakeProvider) After(d time.Duration) <-chan time.Time {
 type failingProvider struct {
 	t *testing.T
 }
+
+func (failingProvider) UtcNow() time.Time { return time.Now().UTC() }
 
 func (f *failingProvider) After(time.Duration) <-chan time.Time {
 	assert.FailNow(f.t, "AFter should not have been called")

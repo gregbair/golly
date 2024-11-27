@@ -4,6 +4,8 @@ import (
 	"context"
 	"math/rand"
 	"time"
+
+	"github.com/gregbair/golly"
 )
 
 type onRetryFunc func(uint, error)
@@ -32,7 +34,7 @@ type retryConfig struct {
 	delay           time.Duration
 	maxDelay        time.Duration
 	delayGenerator  delayFunc
-	timeProvider    TimeProvider
+	timeProvider    golly.TimeProvider
 }
 
 // Option is a functional configuration function
@@ -48,7 +50,7 @@ func defaultConfig() *retryConfig {
 		randomizer:      rand.Float64,
 		delay:           0,
 		maxDelay:        5 * time.Second,
-		timeProvider:    systemTimeProvider{},
+		timeProvider:    golly.SystemTimeProvider{},
 	}
 }
 
@@ -102,7 +104,7 @@ func Delay(t time.Duration) Option {
 }
 
 // TimeProviderImpl provides a TimeProvider that is used for counting the delay with a default of the stdlib time functions
-func TimeProviderImpl(t TimeProvider) Option {
+func TimeProviderImpl(t golly.TimeProvider) Option {
 	return func(c *retryConfig) {
 		c.timeProvider = t
 	}
