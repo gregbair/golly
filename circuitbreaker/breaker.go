@@ -37,7 +37,7 @@ func New[TResult any](opts ...Option[TResult]) *Breaker[TResult] {
 	b := &behavior{
 		metrics:           createHealthMetrics(c.samplingDuration, c.timeProvider),
 		failureRatio:      c.failureRatio,
-		minimumThroughput: c.minimumThroughput,
+		minimumThroughput: int(c.minimumThroughput),
 	}
 
 	con := &controller[TResult]{

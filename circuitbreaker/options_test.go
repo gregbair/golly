@@ -54,7 +54,7 @@ func TestValidationMinimumThroughput(t *testing.T) {
 		{"too low", 1, true},
 		{"at max", math.MaxInt, false},
 	} {
-		MinimumThroughput(tt.input)(c)
+		MinimumThroughput(uint(tt.input))(c)
 
 		err := validateConfig(c)
 
